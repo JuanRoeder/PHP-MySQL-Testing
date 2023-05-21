@@ -1,4 +1,13 @@
 <?php
+// Configuración de visualización de errores
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+// Configuración de registro de errores en la consola del navegador
+ini_set('log_errors', 1);
+ini_set('error_log', '/var/log/php_errors.log');
+
 // Configuración de la conexión a la base de datos
 $servername = "10.0.0.7:3306";
 $username = "root";
@@ -10,58 +19,35 @@ $conn = new mysqli($servername, $username, $password, $dbname);
 
 // Verificar si hay algún error de conexión
 if ($conn->connect_error) {
-    die("Error de conexión: " . $conn->connect_error);
+    error_log("Error de conexión a la base de datos: " . $conn->connect_error);
+    die("Error de conexión a la base de datos.");
 }
 
-// Ejecutar una consulta inicial para obtener los datos actuales de la tabla
-$sql = "SELECT * FROM TBL_PERSON";
+// Consultar un registro específico de la tabla TBL_PERSON
+$sql = "SELECT * FROM TBL_PERSON WHERE id = 1";
 $result = $conn->query($sql);
 
-// Función para procesar los resultados de la consulta
-function processResults($result)
-{
-    if ($result->num_rows > 0) {
-        while ($row = $result->fetch_assoc()) {
-            $id = $row["id"];
-            $dni = $row["dni"];
-            $name = $row["name"];
-            
-            // Realiza aquí las operaciones que deseas con los datos
-            // Por ejemplo, puedes imprimirlos en la pantalla
-            echo "ID: " . $id . "<br>";
-            echo "DNI: " . $dni . "<br>";
-            echo "Nombre: " . $name . "<br>";
-            
-            // Puedes añadir lógica adicional según tus necesidades
-        }
-    } else {
-        echo "No se encontraron resultados.";
-    }
+// Verificar si se encontraron resultados
+if ($result === false) {
+    error_log("Error en la consulta SQL: " . $conn->error);
+    die("Error en la consulta SQL.");
 }
 
-// Llama a la función para procesar los resultados iniciales
-processResults($result);
+// Obtener los datos del registro
+if ($result->num_rows > 0) {
+    $row = $result->fetch_assoc();
+    $id = $row["id"];
+    $dni = $row["dni"];
+    $name = $row["name"];
 
-// Configura el tiempo máximo de ejecución del script y la memoria máxima permitida
-set_time_limit(0);
-ini_set('memory_limit', '-1');
-
-// Configura el intervalo de tiempo para la verificación de cambios en la tabla (en segundos)
-$interval = 5;
-
-// Ciclo infinito para verificar los cambios en la tabla
-while (true) {
-    sleep($interval); // Espera el intervalo de tiempo especificado
-
-    // Realiza la consulta para obtener los nuevos cambios en la tabla
-    $result = $conn->query($sql);
-
-    // Verifica si hay nuevos resultados y procesa los cambios
-    if ($result->num_rows > 0) {
-        processResults($result);
-    }
+    // Mostrar los datos en pantalla
+    echo "ID: " . $id . "<br>";
+    echo "DNI: " . $dni . "<br>";
+    echo "Nombre: " . $name . "<br>";
+} else {
+    echo "No se encontraron resultados.";
 }
 
-// Cerrar la conexión a la base de datos (este bloque de código no se ejecutará debido al ciclo infinito anterior)
+// Cerrar la conexión a la base de datos
 $conn->close();
 ?>
